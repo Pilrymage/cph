@@ -7,6 +7,8 @@ import runAllAndSave from './webview/processRunAll';
 import path from 'path';
 import { getJudgeViewProvider } from './extension';
 import telmetry from './telmetry';
+import { getDefaultLangPref } from './preferences';
+import { isTioLanguageLocallySupported } from './languageMappings';
 
 /**
  * Execution for the run testcases command. Runs all testcases for the active
@@ -35,11 +37,16 @@ export default async () => {
         return;
     }
 
-    const didCompile = await compileFile(srcPath);
+    if (
+        !problem.tioLanguage ||
+        isTioLanguageLocallySupported(problem.tioLanguage)
+    ) {
+        const didCompile = await compileFile(srcPath);
 
-    if (!didCompile) {
-        globalThis.logger.error('Could not compile', srcPath);
-        return;
+        if (!didCompile) {
+            globalThis.logger.error('Could not compile', srcPath);
+            return;
+        }
     }
     await editor.document.save();
     getJudgeViewProvider().focus();
@@ -58,6 +65,7 @@ const createLocalProblem = async (editor: vscode.TextEditor) => {
     if (checkUnsupported(srcPath)) {
         return;
     }
+    const defaultTioLanguage = getDefaultLangPref();
 
     const newProblem: Problem = {
         name: 'Local: ' + path.basename(srcPath).split('.')[0],
@@ -75,6 +83,7 @@ const createLocalProblem = async (editor: vscode.TextEditor) => {
         srcPath,
         group: 'local',
         local: true,
+        tioLanguage: defaultTioLanguage || undefined,
     };
     globalThis.logger.log(newProblem);
     saveProblem(srcPath, newProblem);

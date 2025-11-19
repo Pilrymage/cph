@@ -89,6 +89,7 @@ export type Problem = {
     tests: TestCase[];
     srcPath: string;
     local?: boolean;
+    tioLanguage?: string;
 };
 
 export type Case = {

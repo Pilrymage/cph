@@ -95,8 +95,8 @@ export const getLiveUserCountPref = (): boolean =>
     getPreference('general.showLiveUserCount') || false;
 
 export const getDefaultLangPref = (): string | null => {
-    const pref = getPreference('general.defaultLanguage');
-    if (pref === 'none' || pref == ' ' || !pref) {
+    const pref = (getPreference('general.defaultLanguage') || '').trim();
+    if (pref === '' || pref.toLowerCase() === 'none') {
         return null;
     }
     return pref;

@@ -1,14 +1,60 @@
 import { Language, Run } from './types';
-import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
+import { spawn } from 'child_process';
 import { platform } from 'os';
-import config from './config';
 import { getTimeOutPref } from './preferences';
 import * as vscode from 'vscode';
 import path from 'path';
-import { onlineJudgeEnv } from './compiler';
 import telmetry from './telmetry';
+import { promises as fs } from 'fs';
+import { runOnTio, ExecutionAbortedError } from './tioRunner';
+import type { TioLanguage } from 'tio.js';
 
-const runningBinaries: ChildProcessWithoutNullStreams[] = [];
+const runningExecutions = new Set<AbortController>();
+
+const normalizeCompiler = (compiler: string) => compiler.toLowerCase();
+
+const mapLanguageToTio = (language: Language): TioLanguage => {
+    const compiler = normalizeCompiler(language.compiler);
+    switch (language.name) {
+        case 'cpp':
+        case 'cc':
+        case 'cxx': {
+            return compiler.includes('clang') ? 'cpp-clang' : 'cpp-gcc';
+        }
+        case 'c': {
+            return compiler.includes('clang') ? 'c-clang' : 'c-gcc';
+        }
+        case 'python': {
+            return compiler.includes('python2') ? 'python2' : 'python3';
+        }
+        case 'ruby': {
+            return 'ruby';
+        }
+        case 'js': {
+            return 'javascript-node';
+        }
+        case 'java': {
+            return 'java-openjdk';
+        }
+        case 'rust': {
+            return 'rust';
+        }
+        case 'go': {
+            return 'go';
+        }
+        case 'hs': {
+            return 'haskell';
+        }
+        case 'csharp': {
+            return 'cs-mono';
+        }
+        default: {
+            throw new Error(
+                `Unsupported language for tio.run: ${language.name}`,
+            );
+        }
+    }
+};
 
 /**
  * Run a single testcase, and return the raw results, without judging.
@@ -16,12 +62,14 @@ const runningBinaries: ChildProcessWithoutNullStreams[] = [];
  * @param binPath path to the executable binary
  * @param input string to be piped into the stdin of the spawned process
  */
-export const runTestCase = (
-    language: Language,
+export const runTestCase = async (
+    language: Language | null,
     binPath: string,
     input: string,
+    srcPath: string,
+    overrideTioLanguage?: string,
 ): Promise<Run> => {
-    globalThis.logger.log('Running testcase', language, binPath, input);
+    const sourcePath = srcPath ?? binPath;
     const result: Run = {
         stdout: '',
         stderr: '',
@@ -30,142 +78,62 @@ export const runTestCase = (
         time: 0,
         timeOut: false,
     };
-    const spawnOpts = {
-        timeout: config.timeout,
-        env: {
-            ...global.process.env,
-            DEBUG: 'true',
-            CPH: 'true',
-        },
-    };
 
-    let process: ChildProcessWithoutNullStreams;
+    const tioLanguage =
+        overrideTioLanguage ??
+        (language ? mapLanguageToTio(language) : undefined);
 
-    const killer = setTimeout(() => {
-        result.timeOut = true;
-        process.kill();
-    }, getTimeOutPref());
-
-    // HACK - On Windows, `python3` will be changed to `python`!
-    if (platform() === 'win32' && language.compiler === 'python3') {
-        language.compiler = 'python';
+    if (!tioLanguage) {
+        result.stderr =
+            'Unable to resolve a tio.run language. Please configure a default language.';
+        result.signal = 'ERROR';
+        vscode.window.showErrorMessage(result.stderr);
+        return result;
     }
 
-    // Start the binary or the interpreter.
-    switch (language.name) {
-        case 'python': {
-            process = spawn(
-                language.compiler, // 'python3' or 'python' TBD
-                [binPath, ...language.args],
-                spawnOpts,
+    globalThis.logger.log(
+        'Running testcase via tio.run',
+        tioLanguage,
+        sourcePath,
+    );
+
+    const abortController = new AbortController();
+    runningExecutions.add(abortController);
+
+    try {
+        const code = await fs.readFile(sourcePath, 'utf8');
+        const tioResponse = await runOnTio(code, {
+            language: tioLanguage,
+            stdin: input,
+            timeout: getTimeOutPref(),
+            signal: abortController.signal,
+        });
+
+        result.stdout = tioResponse.output;
+        result.stderr = '';
+        result.code = tioResponse.exitCode;
+        result.signal = null;
+        result.time = Math.max(0, Math.round(tioResponse.realTime * 1000));
+        result.timeOut = tioResponse.timedOut;
+        globalThis.logger.log('Run Result:', result);
+    } catch (err: any) {
+        if (err instanceof ExecutionAbortedError) {
+            result.stderr = 'Execution aborted by user.';
+            result.signal = 'ABORTED';
+            globalThis.logger.log('Run aborted by user request');
+        } else {
+            result.stderr = err instanceof Error ? err.message : String(err);
+            result.signal = 'ERROR';
+            vscode.window.showErrorMessage(
+                `Could not execute testcase via tio.run: ${result.stderr}`,
             );
-            break;
+            globalThis.logger.error('Remote execution failed', err);
         }
-        case 'ruby': {
-            process = spawn(
-                language.compiler,
-                [binPath, ...language.args],
-                spawnOpts,
-            );
-            break;
-        }
-        case 'js': {
-            process = spawn(
-                language.compiler,
-                [binPath, ...language.args],
-                spawnOpts,
-            );
-            break;
-        }
-        case 'java': {
-            const args: string[] = [];
-            if (onlineJudgeEnv) {
-                args.push('-DONLINE_JUDGE');
-            }
-
-            const binDir = path.dirname(binPath);
-            args.push('-cp');
-            args.push(binDir);
-
-            const binFileName = path.parse(binPath).name.slice(0, -1);
-            args.push(binFileName);
-
-            process = spawn('java', args);
-            break;
-        }
-        case 'csharp': {
-            let binFileName: string;
-
-            if (language.compiler.includes('dotnet')) {
-                const projName = '.cphcsrun';
-                const isLinux = platform() == 'linux';
-                if (isLinux) {
-                    binFileName = projName;
-                } else {
-                    binFileName = projName + '.exe';
-                }
-
-                const binFilePath = path.join(binPath, binFileName);
-                process = spawn(binFilePath, ['/stack:67108864'], spawnOpts);
-            } else {
-                // Run with mono
-                process = spawn('mono', [binPath], spawnOpts);
-            }
-
-            break;
-        }
-        default: {
-            process = spawn(binPath, spawnOpts);
-        }
+    } finally {
+        runningExecutions.delete(abortController);
     }
 
-    process.on('error', (err) => {
-        globalThis.logger.error(err);
-        vscode.window.showErrorMessage(
-            `Could not launch testcase process. Is '${language.compiler}' in your PATH?`,
-        );
-    });
-
-    const begin = Date.now();
-    const ret: Promise<Run> = new Promise((resolve) => {
-        runningBinaries.push(process);
-        process.on('exit', (code, signal) => {
-            const end = Date.now();
-            clearTimeout(killer);
-            result.code = code;
-            result.signal = signal;
-            result.time = end - begin;
-            runningBinaries.pop();
-            globalThis.logger.log('Run Result:', result);
-            resolve(result);
-        });
-
-        process.stdout.on('data', (data) => {
-            result.stdout += data;
-        });
-        process.stderr.on('data', (data) => (result.stderr += data));
-
-        globalThis.logger.log('Wrote to STDIN');
-        try {
-            process.stdin.write(input);
-        } catch (err) {
-            globalThis.logger.error('WRITEERROR', err);
-        }
-
-        process.stdin.end();
-        process.on('error', (err) => {
-            const end = Date.now();
-            clearTimeout(killer);
-            result.code = 1;
-            result.signal = err.name;
-            result.time = end - begin;
-            runningBinaries.pop();
-            globalThis.logger.log('Run Error Result:', result);
-            resolve(result);
-        });
-    });
-
-    return ret;
+    return result;
 };
 
 /** Remove the generated binary from the file system, if present */
@@ -208,5 +176,6 @@ export const deleteBinary = (language: Language, binPath: string) => {
 export const killRunning = () => {
     globalThis.reporter.sendTelemetryEvent(telmetry.KILL_RUNNING);
     globalThis.logger.log('Killling binaries');
-    runningBinaries.forEach((process) => process.kill());
+    runningExecutions.forEach((controller) => controller.abort());
+    runningExecutions.clear();
 };

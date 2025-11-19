@@ -15,6 +15,12 @@ import {
     getMenuChoices,
     getDefaultLanguageTemplateFileLocation,
 } from './preferences';
+import {
+    choiceToDefaultTioLanguage,
+    getExtensionForTioLanguage,
+    sanitizeExtensionFromTioLanguage,
+    getSupportedChoice,
+} from './languageMappings';
 import { getProblemName } from './submit';
 import { spawn } from 'child_process';
 import { getJudgeViewProvider } from './extension';
@@ -189,10 +195,11 @@ const handleNewProblem = async (problem: Problem) => {
         vscode.window.showInformationMessage('Please open a folder first.');
         return;
     }
-    const defaultLanguage = getDefaultLangPref();
+    const defaultTioLanguage = getDefaultLangPref();
     let extn: string;
+    let problemTioLanguage: string | null = null;
 
-    if (defaultLanguage == null) {
+    if (defaultTioLanguage == null) {
         const allChoices = new Set(Object.keys(config.extensions));
         const userChoices = getMenuChoices();
         const choices = userChoices.filter((x) => allChoices.has(x));
@@ -203,11 +210,21 @@ const handleNewProblem = async (problem: Problem) => {
             );
             return;
         }
-        // @ts-ignore
-        extn = config.extensions[selected];
+        const supportedChoice = getSupportedChoice(selected);
+        if (!supportedChoice) {
+            vscode.window.showErrorMessage(
+                'Selected language is not supported. Please update your menu choices.',
+            );
+            return;
+        }
+        extn = config.extensions[supportedChoice];
+        problemTioLanguage =
+            choiceToDefaultTioLanguage(supportedChoice) || supportedChoice;
     } else {
-        //@ts-ignore
-        extn = config.extensions[defaultLanguage];
+        problemTioLanguage = defaultTioLanguage;
+        extn =
+            getExtensionForTioLanguage(defaultTioLanguage) ||
+            sanitizeExtensionFromTioLanguage(defaultTioLanguage);
     }
     let url: URL;
     try {
@@ -225,6 +242,9 @@ const handleNewProblem = async (problem: Problem) => {
 
     // Add fields absent in competitive companion.
     problem.srcPath = srcPath;
+    if (problemTioLanguage) {
+        problem.tioLanguage = problemTioLanguage;
+    }
     problem.tests = problem.tests.map((testcase, index) => ({
         ...testcase,
         // Pass in index to avoid generating duplicate id
@@ -234,7 +254,7 @@ const handleNewProblem = async (problem: Problem) => {
     if (!existsSync(srcPath)) {
         writeFileSync(srcPath, '');
 
-        if (defaultLanguage) {
+        if (defaultTioLanguage) {
             const templateLocation = getDefaultLanguageTemplateFileLocation();
             if (templateLocation !== null) {
                 const templateExists = existsSync(templateLocation);

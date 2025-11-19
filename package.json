@@ -322,21 +322,8 @@
                 "cph.general.defaultLanguage": {
                     "title": "Default language for new problems",
                     "type": "string",
-                    "default": "",
-                    "enum": [
-                        "none",
-                        "c",
-                        "cpp",
-                        "python",
-                        "rust",
-                        "js",
-                        "java",
-                        "ruby",
-                        "csharp",
-                        "go",
-                        "haskell"
-                    ],
-                    "description": "The default language for problems imported via Competitive Companion (None will give option to select language on importing problem every time)"
+                    "default": "none",
+                    "description": "Provide a tio.js language id (e.g. \"python3\", \"cpp-gcc\") to always use that runtime for new problems. Use \"none\" to keep prompting for a language."
                 },
                 "cph.general.menuChoices": {
                     "type": "string",
@@ -422,11 +409,12 @@
         "webpack-cli": "^5.1.4"
     },
     "dependencies": {
+        "@vscode/extension-telemetry": "^0.9.0",
         "python-shell": "^5.0.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-textarea-autosize": "^8.5.3",
-        "@vscode/extension-telemetry": "^0.9.0"
+        "tio.js": "^4.0.3"
     },
     "repository": {
         "type": "git",

@@ -1,4 +1,4 @@
-import { Problem, RunResult } from '../types';
+import { Language, Problem, RunResult } from '../types';
 import { getLanguage } from '../utils';
 import { getBinSaveLocation, compileFile } from '../compiler';
 import { saveProblem } from '../parser';
@@ -20,8 +20,19 @@ export const runSingleAndSave = async (
     }
     globalThis.logger.log('Run and save started', problem, id);
     const srcPath = problem.srcPath;
-    const language = getLanguage(srcPath);
-    const binPath = getBinSaveLocation(srcPath);
+    let language: Language | null = null;
+    try {
+        language = getLanguage(srcPath);
+    } catch (err) {
+        if (!problem.tioLanguage) {
+            vscode.window.showErrorMessage(
+                'Unable to determine language for this file. Please set a default language in the settings.',
+            );
+            globalThis.logger.error('Failed to detect language', err);
+            return;
+        }
+    }
+    const binPath = language ? getBinSaveLocation(srcPath) : srcPath;
     const idx = problem.tests.findIndex((value) => value.id === id);
     const testCase = problem.tests[idx];
 
@@ -36,16 +47,22 @@ export const runSingleAndSave = async (
 
     saveProblem(srcPath, problem);
 
-    if (!skipCompile) {
+    if (!skipCompile && language) {
         if (!(await compileFile(srcPath))) {
             globalThis.logger.error('Failed to compile', problem, id);
             return;
         }
     }
 
-    const run = await runTestCase(language, binPath, testCase.input);
+    const run = await runTestCase(
+        language,
+        binPath,
+        testCase.input,
+        srcPath,
+        problem.tioLanguage,
+    );
 
-    if (!skipCompile) {
+    if (!skipCompile && language) {
         deleteBinary(language, binPath);
     }
 

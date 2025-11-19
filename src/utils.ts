@@ -5,7 +5,7 @@ import path from 'path';
 import * as vscode from 'vscode';
 
 import config from './config';
-import { getProbSaveLocation } from './parser';
+import { getProbSaveLocation, getProblem } from './parser';
 import {
     getCArgsPref,
     getCppArgsPref,
@@ -27,6 +27,7 @@ import {
     getGoCommand,
     getHaskellCommand,
     getCSharpCommand,
+    getDefaultLangPref,
 } from './preferences';
 import { Language, Problem } from './types';
 import telmetry from './telmetry';
@@ -137,9 +138,22 @@ export const getLanguage = (srcPath: string): Language => {
 };
 
 export const isValidLanguage = (srcPath: string): boolean => {
-    return config.supportedExtensions.includes(
-        path.extname(srcPath).split('.')[1],
-    );
+    const extension = path.extname(srcPath).split('.')[1];
+    if (extension && config.supportedExtensions.includes(extension)) {
+        return true;
+    }
+
+    const defaultTioLanguage = getDefaultLangPref();
+    if (defaultTioLanguage) {
+        return true;
+    }
+
+    const problem = getProblem(srcPath);
+    if (problem?.tioLanguage) {
+        return true;
+    }
+
+    return false;
 };
 
 export const isCodeforcesUrl = (url: URL): boolean => {
