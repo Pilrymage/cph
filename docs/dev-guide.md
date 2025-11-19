@@ -73,9 +73,34 @@ commiting, make sure you are passing the following tests:
 ## Bundling as `.vsix`
 
 To generate the extension bundle for publishing, install
-[VSCE package](https://www.npmjs.com/package/vsce) first (globally).
+[VSCE package](https://www.npmjs.com/package/vsce) first (globally). Then, in
+the root directory, run `vsce package` to generate the extension file.
 
-Then, in the root directory, run `vsce package` to generate the extension file.
+### Packaging through GitHub Actions
+
+If you prefer producing the bundle via CI (and keeping marketplace publishing
+disabled), use the **Package VS Code Extension** workflow:
+
+1. Navigate to **Actions → Package VS Code Extension → Run workflow**.
+2. Provide a SemVer string (for example `1.4.2`). Leaving the field empty keeps
+   the version already stored in `package.json`. When provided, the workflow
+   runs `npm version <input> --no-git-tag-version` so the generated VSIX embeds
+   that version number.
+3. The workflow runs `npm run vscode:prepublish` followed by `vsce package` and
+   uploads `cph-<version>.vsix` as a build artifact named
+   `cph-extension-<version>`.
+4. Download the artifact once the job completes.
+
+To associate the VSIX with a repository tag or release:
+
+1. Create and push a tag that mirrors the packaged version
+   (`git tag v1.4.2 && git push origin v1.4.2`) or start a draft release that
+   targets that tag.
+2. Upload the downloaded `cph-1.4.2.vsix` file as a release asset (either
+   through the GitHub UI or via
+   `gh release create v1.4.2 ./cph-1.4.2.vsix --title "v1.4.2"`).
+3. Publish the release. Consumers can now grab the VSIX for that specific tag
+   without anything hitting the VS Code marketplace.
 
 ## Getting help
 
