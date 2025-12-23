@@ -32,7 +32,7 @@ import {
 import { Language, Problem } from './types';
 import telmetry from './telmetry';
 
-const oc = vscode.window.createOutputChannel('cph');
+const oc = vscode.window.createOutputChannel('cphTio');
 
 /**
  * Get language based on file extension

@@ -192,7 +192,7 @@ const getDotnetProjectLocation = (
         return srcPath;
     }
 
-    const projName = '.cphcsrun';
+    const projName = '.cphTioCsrun';
     const srcDir = path.dirname(srcPath);
     const projDir = path.join(srcDir, projName);
     return path.join(projDir, projName + '.csproj');
@@ -357,7 +357,7 @@ export const compileFile = async (srcPath: string): Promise<boolean> => {
             ocWrite(
                 'Errors while compiling:\n' +
                     err.message +
-                    `\n\nHint: Is the compiler ${language.compiler} installed? Check the compiler command in cph settings for the current language.`,
+                    `\n\nHint: Is the compiler ${language.compiler} installed? Check the compiler command in CPH Tio settings for the current language.`,
             );
             getJudgeViewProvider().extensionToJudgeViewMessage({
                 command: 'compiling-stop',

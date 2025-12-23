@@ -48,27 +48,27 @@ export const getJudgeViewProvider = () => {
 const registerCommands = (context: vscode.ExtensionContext) => {
     globalThis.logger.log('Registering commands');
     const disposable = vscode.commands.registerCommand(
-        'cph.runTestCases',
+        'cphTio.runTestCases',
         () => {
             runTestCases();
         },
     );
 
     const disposable2 = vscode.commands.registerCommand(
-        'extension.runCodeforcesTestcases',
+        'cphTio.runCodeforcesTestcases',
         () => {
             runTestCases();
         },
     );
 
     const disposable3 = vscode.commands.registerCommand(
-        'cph.submitToCodeForces',
+        'cphTio.submitToCodeForces',
         () => {
             submitToCodeForces();
         },
     );
     const disposable4 = vscode.commands.registerCommand(
-        'cph.submitToKattis',
+        'cphTio.submitToKattis',
         () => {
             submitToKattis();
         },
@@ -97,10 +97,8 @@ const registerCommands = (context: vscode.ExtensionContext) => {
 
 // This method is called when the extension is activated
 export function activate(context: vscode.ExtensionContext) {
-    globalThis.logger.log('cph: activate() execution started');
+    globalThis.logger.log('cphTio: activate() execution started');
     globalThis.context = context;
-
-    downloadRemoteMessage();
 
     const statusBarItem = vscode.window.createStatusBarItem(
         vscode.StatusBarAlignment.Left,
@@ -108,9 +106,9 @@ export function activate(context: vscode.ExtensionContext) {
     );
     statusBarItem.text = ' $(run-all)  Run Testcases';
     statusBarItem.tooltip =
-        'Competitive Programming Helper - Run all testcases or create if none exist.';
+        'CPH Tio Runner - Run all testcases or create if none exist.';
     statusBarItem.show();
-    statusBarItem.command = 'cph.runTestCases';
+    statusBarItem.command = 'cphTio.runTestCases';
 
     registerCommands(context);
     setupCompanionServer();
@@ -134,23 +132,4 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     return;
-}
-
-async function downloadRemoteMessage() {
-    try {
-        globalThis.logger.log('Fetching remote message');
-        globalThis.remoteMessage = await (
-            await fetch(config.remoteMessageUrl)
-        ).text();
-        getJudgeViewProvider().extensionToJudgeViewMessage({
-            command: 'remote-message',
-            message: globalThis.remoteMessage,
-        });
-        globalThis.logger.log(
-            'Remote message fetched',
-            globalThis.remoteMessage,
-        );
-    } catch (e) {
-        globalThis.logger.error('Error fetching remote message', e);
-    }
 }

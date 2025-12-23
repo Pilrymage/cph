@@ -2,7 +2,7 @@
 
 This document contains a basic developer guide to get started with the extension
 development. In case of any confusions/ need for additional information, please
-create an issue in the [repo](https://github.com/agrawal-d/cph). You should also
+create an issue in the [repo](https://github.com/Pilrymage/cph). You should also
 take a look at the [user guide](user-guide.md) to understand the
 user-facing terms.
 
@@ -105,4 +105,4 @@ To associate the VSIX with a repository tag or release:
 ## Getting help
 
 To discuss ideas and problems while development, please create an issue in the
-[repo](https://github.com/agrawal-d/cph).
+[repo](https://github.com/Pilrymage/cph).

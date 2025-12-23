@@ -48,9 +48,7 @@ export type prefSection =
     | 'language.haskell.Command'
     | 'general.retainWebviewContext'
     | 'general.autoShowJudge'
-    | 'general.defaultLanguageTemplateFileLocation'
-    | 'general.remoteServerAddress'
-    | 'general.showLiveUserCount';
+    | 'general.defaultLanguageTemplateFileLocation';
 
 export type Language = {
     name: LangNames;
@@ -220,11 +218,6 @@ export type NewProblemCommand = {
     problem: Problem | undefined;
 };
 
-export type RemoteMessageCommand = {
-    command: 'remote-message';
-    message: string;
-};
-
 export type ExtLogsCommand = {
     command: 'ext-logs';
     logs: string;
@@ -239,7 +232,6 @@ export type VSToWebViewMessage =
     | WaitingForSubmitCommand
     | SubmitFinishedCommand
     | NotRunningCommand
-    | RemoteMessageCommand
     | NewProblemCommand
     | ExtLogsCommand;
 
@@ -262,7 +254,6 @@ export type WebViewpersistenceState = {
 declare global {
     var reporter: TelemetryReporter;
     var context: vscode.ExtensionContext;
-    var remoteMessage: string | undefined;
     var storedLogs: string;
     var logger: any;
 }

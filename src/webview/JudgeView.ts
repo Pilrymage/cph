@@ -9,14 +9,12 @@ import runAllAndSave from './processRunAll';
 import runTestCases from '../runTestCases';
 import {
     getAutoShowJudgePref,
-    getRemoteServerAddressPref,
-    getLiveUserCountPref,
     getRetainWebviewContextPref,
 } from '../preferences';
 import { setOnlineJudgeEnv } from '../compiler';
 
 class JudgeViewProvider implements vscode.WebviewViewProvider {
-    public static readonly viewType = 'cph.judgeView';
+    public static readonly viewType = 'cphTio.judgeView';
 
     private _view?: vscode.WebviewView;
 
@@ -149,7 +147,7 @@ class JudgeViewProvider implements vscode.WebviewViewProvider {
     public async focus() {
         globalThis.logger.log('focusing');
         if (!this._view) {
-            await vscode.commands.executeCommand('cph.judgeView.focus');
+            await vscode.commands.executeCommand('cphTio.judgeView.focus');
         } else {
             this._view.show?.(true);
         }
@@ -212,10 +210,6 @@ class JudgeViewProvider implements vscode.WebviewViewProvider {
             vscode.Uri.joinPath(this._extensionUri, 'dist', 'app.css'),
         );
 
-        const remoteServerAddress = getRemoteServerAddressPref();
-
-        const showLiveUserCount = getLiveUserCountPref();
-
         const codiconsUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this._extensionUri, 'dist', 'codicon.css'),
         );
@@ -237,10 +231,6 @@ class JudgeViewProvider implements vscode.WebviewViewProvider {
             ),
         );
 
-        const remoteMessage = globalThis.remoteMessage
-            ? globalThis.remoteMessage.trim()
-            : ' ';
-
         const html = `
             <!DOCTYPE html lang="EN">
             <html>
@@ -253,7 +243,7 @@ class JudgeViewProvider implements vscode.WebviewViewProvider {
                     <div id="app">
                         An error occurred! Restarting VS Code may solve the
                         issue. If not, please
-                        <a href="https://github.com/agrawal-d/cph/issues"
+                        <a href="https://github.com/Pilrymage/cph/issues"
                             >report the bug on GitHub</a
                         >.
                     </div>
@@ -261,10 +251,7 @@ class JudgeViewProvider implements vscode.WebviewViewProvider {
                         // Since the react script takes time to load, the problem is sent to the webview before it has even loaded.
                         // So, for the initial request, ask for it again.
                         window.vscodeApi = acquireVsCodeApi();
-                        window.remoteMessage = '${remoteMessage}';
                         window.generatedJsonUri = '${generatedJsonUri}';
-                        window.remoteServerAddress = '${remoteServerAddress}';
-                        window.showLiveUserCount = ${showLiveUserCount};
 
                         document.addEventListener(
                             'DOMContentLoaded',

@@ -1,4 +1,4 @@
-# cph user guide
+# CPH Tio user guide
 
 This document contains instructions on how to use this extension.
 
@@ -11,8 +11,9 @@ actions remain the same.
 
 ## Using with competitive companion
 
-1. [Install cph](https://marketplace.visualstudio.com/items?itemName=DivyanshuAgrawal.competitive-programming-helper)
-   by following the instructions given in the link.
+1. Download the latest CPH Tio Runner VSIX from
+   [GitHub releases](https://github.com/Pilrymage/cph/releases) and install it
+   via `Extensions → … → Install from VSIX...` inside VS Code.
 
 1. [Install competitive companion](https://github.com/jmerle/competitive-companion#readme)
    browser extension in your browser, using the instructions given in the link.
@@ -116,4 +117,4 @@ Several options are available to customize the extension. Open VS Code settings
 ## Getting help
 
 If you have trouble using the extension, find any bugs, or want to request a new
-feature, please create an issue [here](https://github.com/agrawal-d/cph/issues).
+feature, please create an issue [here](https://github.com/Pilrymage/cph/issues).

@@ -1,25 +1,26 @@
-# Fork of "Competitive Programming Helper", But in All Sorts of Languages You'd Like to Play with
+# CPH Tio Runner
 
-[![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fagrawal-d%2Fcph%2Fbadge%3Fref%3Dmain&style=flat)](https://actions-badge.atrox.dev/agrawal-d/cph/goto?ref=main)
-In this fork, we simply upload your codes into [tio.run](https://tio.run), in
-which the environment of all PLs you are able to name it or not are granted. It
-can be extremely useful if you are trying to practice new PLs, through
-re-implement several programming problems you have solved, so that you clearly
-knows how the logic and algorithms tend to be like, and all you need to take
-care of is the PL itself.
+CPH Tio Runner is a maintained fork of Competitive Programming Helper that ships
+with tio.run execution built in so it can live side-by-side with the upstream
+extension. It keeps the familiar workflow for importing problems and managing
+testcases while delegating execution to tio.run, which makes it perfect for
+experimenting with new languages without installing local toolchains.
 
 ## Quick start
 
-1. You read [agrawal-d/cph](https://github.com/agrawal-d/cph), the original repo
-   of this extension, and play with it.
-2. Download this extension from release, and in the extensions sidebar in
-   VSCode, find and click `Install from VSIX...`.
+1. Install the upstream
+   [Competitive Programming Helper](https://marketplace.visualstudio.com/items?itemName=DivyanshuAgrawal.competitive-programming-helper)
+   if you still need its local compiler workflow (optional).
+2. Download the latest `cph-tio-runner` VSIX from this repo's releases and use
+   `Extensions > ... > Install from VSIX...` inside VS Code.
+3. Configure your preferred tio.run default language under
+   `CPH Tio › General: Default Language` so new problems auto-run on the runtime
+   you expect.
 
-## Features Deprecated (Just don't care about)
+## Features Removed Compared to Upstream
 
--   Kattis/Codeforces auto-submit integration.
--   Your local compiler or flags (temporarily).
--   Publish on VSCode marketplace.
+-   Live message banners / live user count calls to remote servers.
+-   VS Code Marketplace publishing (install via VSIX instead).
 
 ## Supported Languages
 

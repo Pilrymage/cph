@@ -6,7 +6,7 @@ import fs from 'fs';
 import * as vscode from 'vscode';
 
 const getPreference = (section: prefSection): any => {
-    const ret = workspace.getConfiguration('cph').get(section);
+    const ret = workspace.getConfiguration('cphTio').get(section);
 
     globalThis.logger.log('Read preference for ', section, ret);
     return ret;
@@ -17,7 +17,7 @@ export const updatePreference = (
     value: any,
     target: vscode.ConfigurationTarget,
 ) => {
-    return workspace.getConfiguration('cph').update(section, value, target);
+    return workspace.getConfiguration('cphTio').update(section, value, target);
 };
 
 export const getAutoShowJudgePref = (): boolean =>
@@ -87,12 +87,6 @@ export const getGoArgsPref = (): string[] =>
 
 export const getCSharpArgsPref = (): string[] =>
     getPreference('language.csharp.Args').split(' ') || [];
-
-export const getRemoteServerAddressPref = (): string =>
-    getPreference('general.remoteServerAddress') || '';
-
-export const getLiveUserCountPref = (): boolean =>
-    getPreference('general.showLiveUserCount') || false;
 
 export const getDefaultLangPref = (): string | null => {
     const pref = (getPreference('general.defaultLanguage') || '').trim();

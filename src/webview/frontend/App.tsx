@@ -38,9 +38,6 @@ declare const vscodeApi: {
 
 interface CustomWindow extends Window {
     generatedJsonUri: string;
-    remoteMessage: string | null;
-    remoteServerAddress: string;
-    showLiveUserCount: boolean;
     console: Console;
 }
 declare const window: CustomWindow;
@@ -53,25 +50,6 @@ window.console.debug = customLogger.bind(window.console, originalConsole.debug);
 
 // Original: www.paypal.com/ncp/payment/CMLKCFEJEMX5L
 const payPalUrl = 'https://rb.gy/5iiorz';
-
-function getLiveUserCount(): Promise<number> {
-    console.log('Fetching live user count');
-    return fetch(window.remoteServerAddress)
-        .then((res) => res.text())
-        .then((text) => {
-            const userCount = Number(text);
-            if (isNaN(userCount)) {
-                console.error('Invalid live user count', text);
-                return 0;
-            } else {
-                return userCount;
-            }
-        })
-        .catch((err) => {
-            console.error('Failed to fetch live users', err);
-            return 0;
-        });
-}
 
 function Judge(props: {
     problem: Problem;
@@ -92,22 +70,12 @@ function Judge(props: {
     const [onlineJudgeEnv, setOnlineJudgeEnv] = useState<boolean>(false);
     const [infoPageVisible, setInfoPageVisible] = useState<boolean>(false);
     const [generatedJson, setGeneratedJson] = useState<any | null>(null);
-    const [liveUserCount, setLiveUserCount] = useState<number>(0);
     const [extLogs, setExtLogs] = useState<string>('');
 
     const numPassed = cases.filter(
         (testCase) => testCase.result?.pass === true,
     ).length;
     const total = cases.length;
-
-    useEffect(() => {
-        const updateLiveUserCount = (): void => {
-            getLiveUserCount().then((count) => setLiveUserCount(count));
-        };
-        updateLiveUserCount();
-        const interval = setInterval(updateLiveUserCount, 30000);
-        return () => clearInterval(interval);
-    }, []);
 
     useEffect(() => {
         fetch(window.generatedJsonUri)
@@ -159,11 +127,6 @@ function Judge(props: {
             switch (data.command) {
                 case 'new-problem': {
                     setOnlineJudgeEnv(false);
-                    break;
-                }
-
-                case 'remote-message': {
-                    window.remoteMessage = data.message;
                     break;
                 }
 
@@ -488,10 +451,13 @@ function Judge(props: {
                     <i className="codicon codicon-close"></i>
                 </a>
                 <h1>🌸</h1>
-                <h3>If you find CPH useful, please consider supporting.</h3>
+                <h3>
+                    If you find CPH Tio helpful, please consider supporting the
+                    fork.
+                </h3>
                 <p>
-                    Your contribution helps support continued development of
-                    CPH. CPH is free and open source, thanks to your support.
+                    Your contribution helps keep this fork maintained. CPH Tio
+                    stays free and open source thanks to your support.
                 </p>
                 <a
                     href={payPalUrl}
@@ -513,7 +479,7 @@ function Judge(props: {
             return (
                 <Page
                     content="Loading..."
-                    title="About CPH"
+                    title="About CPH Tio"
                     closePage={() => setInfoPageVisible(false)}
                 />
             );
@@ -521,8 +487,10 @@ function Judge(props: {
         const logs = storedLogs;
         const contents = (
             <div>
-                A VS Code extension to make competitive programming easier,
-                created by Divyanshu Agrawal
+                CPH Tio brings tio.run integration to VS Code for competitive
+                programming. This fork is maintained by Pilrymage and is based
+                on the original Competitive Programming Helper by Divyanshu
+                Agrawal.
                 <hr />
                 <h3>🤖 Enable AI compilation</h3>
                 Get 100x faster compilation using AI, please opt-in below. Your
@@ -542,7 +510,7 @@ function Judge(props: {
                 <h3>Get Help</h3>
                 <a
                     className="btn"
-                    href="https://github.com/agrawal-d/cph/blob/main/docs/user-guide.md"
+                    href="https://github.com/Pilrymage/cph/blob/main/docs/user-guide.md"
                 >
                     User guide
                 </a>
@@ -552,9 +520,6 @@ function Judge(props: {
                 <hr />
                 <h3>Build Time</h3>
                 {generatedJson.dateTime}
-                <hr />
-                <h3>Live user count</h3>
-                {liveUserCount} {liveUserCount === 1 ? 'user' : 'users'} online.
                 <hr />
                 <h3>UI Logs</h3>
                 <pre className="selectable">{logs}</pre>
@@ -576,7 +541,7 @@ function Judge(props: {
         return (
             <Page
                 content={contents}
-                title="About CPH"
+                title="About CPH Tio"
                 closePage={() => setInfoPageVisible(false)}
             />
         );
@@ -676,34 +641,23 @@ function Judge(props: {
                         </a>
                     </small>
                     <small>
-                        <a href="https://rb.gy/vw82u5" className="btn">
+                        <a
+                            href="https://github.com/Pilrymage/cph/issues/new"
+                            className="btn"
+                        >
                             <i className="codicon codicon-feedback"></i>{' '}
                             Feedback
                         </a>
                     </small>
                     <small>
                         <a
-                            href="https://github.com/agrawal-d/cph/issues"
+                            href="https://github.com/Pilrymage/cph/issues"
                             className="btn btn-black"
                         >
                             <i className="codicon codicon-github"></i> Bugs
                         </a>
                     </small>
                 </div>
-                <div className="remote-message">
-                    <p
-                        dangerouslySetInnerHTML={{
-                            __html: window.remoteMessage || '',
-                        }}
-                    />
-                </div>
-                {window.showLiveUserCount && liveUserCount > 0 && (
-                    <div className="liveUserCount">
-                        <i className="codicon codicon-circle-filled color-green"></i>{' '}
-                        {liveUserCount} {liveUserCount === 1 ? 'user' : 'users'}{' '}
-                        online.
-                    </div>
-                )}
             </div>
             <div className="actions">
                 <div className="row">
@@ -884,8 +838,8 @@ function App() {
                 <div className={`ui p10 fallback`}>
                     <div className="text-center">
                         <p>
-                            This document does not have a CPH problem associated
-                            with it.
+                            This document does not have a CPH Tio problem
+                            associated with it.
                         </p>
                         <br />
                         <div className="btn btn-block" onClick={createProblem}>
@@ -896,7 +850,7 @@ function App() {
                         </div>
                         <a
                             className="btn btn-block btn-green"
-                            href="https://github.com/agrawal-d/cph/blob/main/docs/user-guide.md"
+                            href="https://github.com/Pilrymage/cph/blob/main/docs/user-guide.md"
                         >
                             <span className="icon">
                                 <i className="codicon codicon-question"></i>

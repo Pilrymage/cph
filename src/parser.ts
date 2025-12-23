@@ -21,7 +21,7 @@ export const getProbSaveLocation = (srcPath: string): string => {
         .digest('hex')
         .substr(0);
     const baseProbName = `.${srcFileName}_${hash}.prob`;
-    const cphFolder = path.join(srcFolder, '.cph');
+    const cphFolder = path.join(srcFolder, '.cphTio');
     if (savePreference && savePreference !== '') {
         return path.join(savePreference, baseProbName);
     }
@@ -43,10 +43,10 @@ export const getProblem = (srcPath: string): Problem | null => {
 /** Save the problem (metadata) */
 export const saveProblem = (srcPath: string, problem: Problem) => {
     const srcFolder = path.dirname(srcPath);
-    const cphFolder = path.join(srcFolder, '.cph');
+    const cphFolder = path.join(srcFolder, '.cphTio');
 
     if (getSaveLocationPref() === '' && !fs.existsSync(cphFolder)) {
-        globalThis.logger.log('Making .cph folder');
+        globalThis.logger.log('Making .cphTio folder');
         fs.mkdirSync(cphFolder);
     }
 
